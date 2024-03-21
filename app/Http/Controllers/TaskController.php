@@ -15,7 +15,8 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::all();
+        // $tasks = Task::all();
+        $tasks = Task::where('status', false)->get(); // all()で取得すると処理データが大きい
         return view('tasks.index', compact('tasks'));
     }
 
@@ -83,17 +84,26 @@ class TaskController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $rules = [
-            'task_name' => 'required|max:100',
-        ];
+        //「編集する」ボタンをおしたとき
+        if ($request->status === null) {
+            $rules = [
+                'task_name' => 'required|max:100',
+            ];
+            $messages = ['required' => '必須項目です', 'max' => '100文字以下にしてください。'];
+            Validator::make($request->all(), $rules, $messages)->validate();
 
-        $messages = ['required' => '必須項目です', 'max' => '100文字以下にしてください。'];
-        Validator::make($request->all(), $rules, $messages)->validate();
+            $task = Task::find($id);
+            $task->name = $request->input('task_name');
+            $task->save();
+        //「完了」ボタンを押したとき
+        } else {
+            $task = Task::find($id);
+            $task->status = true;
+            $task->save();
+        }
 
-        $task = Task::find($id);
-        $task->name = $request->input('task_name');
-        $task->save();
         return redirect('/tasks');
+
     }
 
     /**
@@ -104,6 +114,7 @@ class TaskController extends Controller
      */
     public function destroy($id)
     {
-        //
+        Task::find($id)->delete();
+        return redirect('/tasks');
     }
 }
